@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "trivy.fullname" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "trivy.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "trivy.fullname" . }}
+    spec:
+      serviceAccountName: {{ include "trivy.serviceAccountName" . }}
+      containers:
+        - name: trivy
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: "/data"
+              name: trivy-storage
+      volumes:
+        - name: trivy-storage
+          persistentVolumeClaim:
+            claimName: {{ include "trivy.fullname" . }}-pvc
